@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * @since Jdk 1.8
  */
 @SpringBootApplication
-@EnableAsync
 public class SleuthDemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(SleuthDemoApplication.class,args);
