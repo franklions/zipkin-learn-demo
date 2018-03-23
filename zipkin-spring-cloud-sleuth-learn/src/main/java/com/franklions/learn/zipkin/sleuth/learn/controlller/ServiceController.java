@@ -37,7 +37,7 @@ public class ServiceController {
     public String serviceA() throws ExecutionException, InterruptedException {
 
         CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
-            return  restTemplate.exchange("http://localhost:8080/serviceB", HttpMethod.GET,
+            return  restTemplate.exchange("http://localhost:8090/serviceB", HttpMethod.GET,
                     null,String.class).getBody();
         },executor);
 
