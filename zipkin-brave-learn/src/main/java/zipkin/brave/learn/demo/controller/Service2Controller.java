@@ -25,7 +25,7 @@ public class Service2Controller {
     public String serviceA() throws IOException, InterruptedException {
         Thread.sleep(1000);
         Request request = new Request.Builder()
-                .url("http://localhost:8080/service1/serviceB")
+                .url("http://localhost:8090/serviceB")
                 .get()
                 .build();
         Response response = client.newCall(request).execute();
@@ -41,7 +41,7 @@ public class Service2Controller {
     public String serviceC() throws InterruptedException, IOException {
         Thread.sleep(1000);
         Request request = new Request.Builder()
-                .url("http://localhost:8080/service1/serviceB")
+                .url("http://localhost:8090/serviceB")
                 .get()
                 .build();
         Response response = client.newCall(request).execute();
