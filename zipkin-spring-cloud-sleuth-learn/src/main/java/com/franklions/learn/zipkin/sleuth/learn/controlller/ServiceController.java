@@ -2,18 +2,21 @@ package com.franklions.learn.zipkin.sleuth.learn.controlller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 /**
  * @author flsh
@@ -28,7 +31,10 @@ public class ServiceController {
     RestTemplate restTemplate;
 
     @Autowired
-    AsyncRestTemplate asyncRestTemplate;
+    Tracer tracer;
+
+    @Autowired
+    AsyncRestTemplate traceAsyncRestTemplate;
 
     @Autowired @Qualifier("poolTaskExecutor")
     Executor executor ;
@@ -37,7 +43,7 @@ public class ServiceController {
     public String serviceA() throws ExecutionException, InterruptedException {
 
         CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
-            return  restTemplate.exchange("http://localhost:8090/serviceB", HttpMethod.GET,
+            return  restTemplate.exchange("http://localhost:8080/serviceB", HttpMethod.GET,
                     null,String.class).getBody();
         },executor);
 
@@ -46,12 +52,17 @@ public class ServiceController {
 
     @GetMapping(value = "serviceB")
     public String serviceB(){
+        Span span =   this.tracer.getCurrentSpan();
+        System.out.printf("span========" + span.toString());
         return "service B";
     }
 
     @GetMapping(value = "serviceC")
     public String serviceC() throws ExecutionException, InterruptedException {
-        return  this.asyncRestTemplate.exchange("http://localhost:8090/serviceB", HttpMethod.GET,
+
+         Span span =   this.tracer.getCurrentSpan();
+        System.out.printf("span========" + span.toString());
+        return  this.traceAsyncRestTemplate.exchange("http://localhost:8080/serviceB", HttpMethod.GET,
                 null,String.class).get().getBody();
     }
 
@@ -76,7 +87,7 @@ public class ServiceController {
     @GetMapping(value = "serviceF")
     public String serviceF() throws ExecutionException, InterruptedException {
         ListenableFuture<ResponseEntity<String>> future =
-                asyncRestTemplate.exchange("http://localhost:8090/serviceE",HttpMethod.GET,
+                traceAsyncRestTemplate.exchange("http://localhost:8090/serviceE",HttpMethod.GET,
                         null,String.class);
 
         future.addCallback(new ListenableFutureCallback<ResponseEntity<String>>() {
