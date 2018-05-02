@@ -1,5 +1,6 @@
 package com.franklions.learn.zipkin.sleuth.learn.controlller;
 
+import com.franklions.learn.zipkin.sleuth.learn.service.ValueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.sleuth.Span;
@@ -36,6 +37,9 @@ public class ServiceController {
     @Autowired
     AsyncRestTemplate traceAsyncRestTemplate;
 
+    @Autowired
+    ValueService valueService;
+
     @Autowired @Qualifier("poolTaskExecutor")
     Executor executor ;
 
@@ -53,15 +57,27 @@ public class ServiceController {
     @GetMapping(value = "serviceB")
     public String serviceB(){
         Span span =   this.tracer.getCurrentSpan();
-        System.out.printf("span========" + span.toString());
-        return "service B";
+        span.logEvent("cur begin");
+        System.out.println("span========" + span.toString());
+        Span beginSpan = this.tracer.createSpan("controller  begin span",span);
+        this.tracer.addTag("taxValue", "abc tag");
+        beginSpan.logEvent("controller begin");
+        System.out.println("Controller begin span: " +beginSpan);
+
+        String retval = valueService.getValue();
+
+//        Span endSpan  = this.tracer.createSpan("controller  end span",tracer.getCurrentSpan());
+//        System.out.println("Controller end span: " +endSpan);
+        //关闭当前节点
+        this.tracer.close(beginSpan);
+        return retval;
     }
 
     @GetMapping(value = "serviceC")
     public String serviceC() throws ExecutionException, InterruptedException {
 
          Span span =   this.tracer.getCurrentSpan();
-        System.out.printf("span========" + span.toString());
+        System.out.println("span========" + span.toString());
         return  this.traceAsyncRestTemplate.exchange("http://localhost:8080/serviceB", HttpMethod.GET,
                 null,String.class).get().getBody();
     }
